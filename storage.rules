@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    // Public content: sermons, gallery, livetv, store images/files, pastor photos
+    match /{folder=sermons|gallery|livetv|store|pastors}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read: if false;
+      allow write: if isAdmin();
+    }
+  }
+}
