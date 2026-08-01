@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { r2, R2_BUCKET } from "@/lib/r2";
-import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
 
 async function isRequestFromAdmin(req: NextRequest): Promise<boolean> {
   const authHeader = req.headers.get("authorization");
@@ -10,8 +10,8 @@ async function isRequestFromAdmin(req: NextRequest): Promise<boolean> {
   const idToken = authHeader.slice("Bearer ".length);
 
   try {
-    const decoded = await adminAuth.verifyIdToken(idToken);
-    const adminDoc = await adminDb.collection("admins").doc(decoded.uid).get();
+    const decoded = await getAdminAuth().verifyIdToken(idToken);
+    const adminDoc = await getAdminDb().collection("admins").doc(decoded.uid).get();
     return adminDoc.exists;
   } catch {
     return false;
