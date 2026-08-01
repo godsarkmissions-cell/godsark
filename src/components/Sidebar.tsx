@@ -91,7 +91,7 @@ export default function Sidebar() {
           <span className="brand-logo-glow relative flex items-center justify-center">
             <Image src="/logo.png" alt="God's Ark Missions" width={36} height={36} className="rounded-full" />
           </span>
-          <span className="whitespace-nowrap text-sm font-bold text-ink sm:text-base">God&apos;s Ark Missions</span>
+          <span className="hidden whitespace-nowrap text-sm font-bold text-ink sm:inline sm:text-base">God&apos;s Ark Missions</span>
         </Link>
 
         <button
