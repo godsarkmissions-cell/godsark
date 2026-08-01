@@ -15,11 +15,13 @@ import {
   Wallet,
   Tv,
   ShoppingBag,
+  Megaphone,
   LogOut,
 } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
   { href: "/admin/sermons", label: "Sermons", icon: Video },
   { href: "/admin/live", label: "Live Broadcasts", icon: Radio },
   { href: "/admin/livetv", label: "24/7 Live TV Schedule", icon: Tv },

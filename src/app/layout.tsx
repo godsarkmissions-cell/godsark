@@ -4,6 +4,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LiveTVWidget from "@/components/LiveTVWidget";
+import IntroVideo from "@/components/IntroVideo";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <AuthProvider>
+          <IntroVideo />
           <Toaster position="top-right" />
           <Navbar />
           <main className="min-h-[70vh]">{children}</main>

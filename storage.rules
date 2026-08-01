@@ -8,7 +8,7 @@ service firebase.storage {
     }
 
     // Public content: sermons, gallery, livetv, store images/files, pastor photos
-    match /{folder=sermons|gallery|livetv|store|pastors}/{allPaths=**} {
+    match /{folder=sermons|gallery|livetv|store|pastors|announcements}/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin();
     }

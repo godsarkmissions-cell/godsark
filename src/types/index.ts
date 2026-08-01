@@ -93,3 +93,30 @@ export interface AdminUser {
   email: string;
   role: "super-admin" | "editor";
 }
+
+export interface PollOption {
+  id: string;
+  text: string;
+}
+
+export interface AnnouncementPoll {
+  question: string;
+  options: PollOption[];
+}
+
+export interface AnnouncementPost {
+  id: string;
+  text: string;
+  imageUrls: string[];      // uploaded photo(s), YouTube-community-post style
+  gifUrl?: string;          // uploaded/linked GIF (rendered as an animated image)
+  poll?: AnnouncementPoll;
+  pinned: boolean;
+  authorName: string;
+  createdAt: number;        // epoch ms
+}
+
+// One doc per device under announcements/{id}/votes/{deviceId}
+export interface AnnouncementVote {
+  optionId: string;
+  votedAt: number;
+}
