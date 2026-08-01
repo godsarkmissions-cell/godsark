@@ -26,31 +26,128 @@ body {
   @apply text-3xl font-bold text-ink mb-2;
 }
 
-/* ---------- Nav tab hover / active micro-interactions ---------- */
-.nav-tab {
+/* ---------- Persistent "three lines" menu trigger ---------- */
+.menu-trigger-icon {
   position: relative;
-  transition: color 0.25s ease, transform 0.25s ease, background-color 0.25s ease;
+  display: block;
+  width: 18px;
+  height: 13px;
 }
-.nav-tab::after {
+.menu-trigger-icon span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: theme("colors.ink.DEFAULT");
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, top 0.3s ease;
+}
+.menu-trigger-icon span:nth-child(1) { top: 0; }
+.menu-trigger-icon span:nth-child(2) { top: 5.5px; }
+.menu-trigger-icon span:nth-child(3) { top: 11px; }
+.menu-trigger-icon.is-open span:nth-child(1) {
+  top: 5.5px;
+  transform: rotate(45deg);
+}
+.menu-trigger-icon.is-open span:nth-child(2) {
+  opacity: 0;
+}
+.menu-trigger-icon.is-open span:nth-child(3) {
+  top: 5.5px;
+  transform: rotate(-45deg);
+}
+.menu-trigger {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.menu-trigger:hover {
+  transform: scale(1.06);
+}
+.menu-trigger:active {
+  transform: scale(0.95);
+}
+
+/* ---------- Sidebar tab hover / active states ---------- */
+.sidebar-tab {
+  transition: color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+}
+.sidebar-tab:hover {
+  transform: translateX(3px);
+}
+.sidebar-tab.is-active {
+  box-shadow: inset 3px 0 0 0 theme("colors.accent.DEFAULT");
+}
+
+/* ---------- Brand logo — perfectly circular soft glow behind it ----------
+   Uses a blurred radial-gradient circle on ::before instead of filter:
+   drop-shadow, since drop-shadow traces the image's actual pixel/alpha
+   bounds (square canvas) and produces a boxy glow. A dedicated circular
+   element guarantees a clean round halo regardless of the source image. */
+.brand-logo-glow img {
+  position: relative;
+  z-index: 1;
+  border-radius: 9999px;
+}
+.brand-logo-glow::before {
   content: "";
   position: absolute;
+  top: 50%;
   left: 50%;
-  bottom: 2px;
-  height: 2px;
-  width: 0;
-  background: theme("colors.accent.DEFAULT");
-  border-radius: 999px;
-  transform: translateX(-50%);
-  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%) scale(1);
+  background: radial-gradient(
+    circle,
+    theme("colors.accent.DEFAULT" / 65%) 0%,
+    theme("colors.primary.light" / 45%) 45%,
+    transparent 72%
+  );
+  filter: blur(9px);
+  z-index: 0;
+  animation: logo-glow-pulse 2.8s ease-in-out infinite;
 }
-.nav-tab:hover {
-  transform: translateY(-1px);
+@keyframes logo-glow-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  50% { transform: translate(-50%, -50%) scale(1.35); opacity: 1; }
 }
-.nav-tab:hover::after {
-  width: 55%;
+
+/* ---------- Hero logo — bigger glow halo + gentle floating pulse ----------
+   Same idea as .brand-logo-glow (a blurred radial-gradient circle behind
+   the image, not a drop-shadow, so the halo stays perfectly round) but
+   sized up for the large 110px hero logo, plus a slow breathing scale
+   on the image itself so the whole badge feels alive. */
+.hero-logo-glow {
+  position: relative;
+  display: inline-flex;
+  animation: hero-logo-breathe 3.6s ease-in-out infinite;
 }
-.nav-tab.is-active::after {
-  width: 0; /* active tabs already get a solid pill background */
+.hero-logo-glow img {
+  position: relative;
+  z-index: 1;
+  border-radius: 9999px;
+}
+.hero-logo-glow::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  border-radius: 9999px;
+  transform: translate(-50%, -50%) scale(1);
+  background: radial-gradient(
+    circle,
+    theme("colors.accent.DEFAULT" / 70%) 0%,
+    theme("colors.primary.light" / 50%) 45%,
+    transparent 72%
+  );
+  filter: blur(18px);
+  z-index: 0;
+  animation: logo-glow-pulse 2.8s ease-in-out infinite;
+}
+@keyframes hero-logo-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
 }
 
 /* Small pulsing "new post" notification dot on the Announcements tab */
@@ -60,6 +157,22 @@ body {
 }
 .notify-dot {
   animation: pulse-dot 1.6s ease-in-out infinite;
+}
+
+/* ---------- "24/7 Live" glowing badge ---------- */
+.live-badge-glow {
+  animation: live-badge-pulse 2.2s ease-in-out infinite;
+}
+@keyframes live-badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45), 0 0 10px 0 rgba(220, 38, 38, 0.25); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0), 0 0 18px 4px rgba(220, 38, 38, 0.45); }
+}
+.live-dot-ping {
+  animation: live-dot-ping 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes live-dot-ping {
+  0% { transform: scale(1); opacity: 0.75; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
 }
 
 /* Entrance animation for announcement cards / modals */
@@ -82,4 +195,74 @@ body {
 /* Poll result bars fill smoothly when results are revealed */
 .poll-bar-fill {
   transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------- Animated / floating gradient background ---------- */
+/* Pair with .bg-brand-gradient: the base gradient is oversized and its
+   position drifts slowly, giving a soft "flowing" motion. */
+.animated-gradient {
+  background-size: 250% 250%;
+  animation: gradient-flow 14s ease-in-out infinite;
+}
+@keyframes gradient-flow {
+  0% { background-position: 0% 30%; }
+  50% { background-position: 100% 70%; }
+  100% { background-position: 0% 30%; }
+}
+
+/* Soft blurred "floating" orbs layered on top of a gradient section for
+   extra depth. Drop <span class="gradient-blob gradient-blob-1" /> (etc.)
+   inside a `position: relative; overflow: hidden;` container. */
+.gradient-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(50px);
+  opacity: 0.35;
+  pointer-events: none;
+  background: white;
+  will-change: transform;
+}
+.gradient-blob-1 {
+  top: -10%;
+  left: -6%;
+  width: 260px;
+  height: 260px;
+  animation: float-blob-a 11s ease-in-out infinite;
+}
+.gradient-blob-2 {
+  bottom: -12%;
+  right: -8%;
+  width: 320px;
+  height: 320px;
+  background: theme("colors.accent.light");
+  animation: float-blob-b 13s ease-in-out infinite;
+}
+.gradient-blob-3 {
+  top: 30%;
+  right: 15%;
+  width: 160px;
+  height: 160px;
+  animation: float-blob-c 9s ease-in-out infinite;
+}
+@keyframes float-blob-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, 30px) scale(1.12); }
+  66% { transform: translate(-20px, 50px) scale(0.92); }
+}
+@keyframes float-blob-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, -40px) scale(1.08); }
+  66% { transform: translate(20px, -15px) scale(0.95); }
+}
+@keyframes float-blob-c {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-25px, 35px) scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .animated-gradient,
+  .gradient-blob-1,
+  .gradient-blob-2,
+  .gradient-blob-3 {
+    animation: none;
+  }
 }

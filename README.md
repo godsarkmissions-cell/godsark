@@ -8,11 +8,23 @@ Theme colors are pulled straight from your logo:
 - Ink navy `#0B1E33`
 
 ## Pages
-`/` Home · `/sermons` · `/live` · `/store` · `/scriptures` · `/gallery` · `/about` · `/donate`
-Admin: `/admin/login`, `/admin` (dashboard), `/admin/sermons`, `/admin/live`, `/admin/livetv`,
-`/admin/gallery`, `/admin/store`, `/admin/church-details`, `/admin/payments`.
+`/` Home · `/announcements` · `/ahimas` (newsletter/blog) · `/sermons` · `/live` · `/store` ·
+`/scriptures` · `/gallery` · `/prayer-requests` · `/about` · `/donate`
+Admin: `/admin/login`, `/admin` (dashboard), `/admin/announcements`, `/admin/ahimas`,
+`/admin/prayer-requests`, `/admin/sermons`, `/admin/live`, `/admin/livetv`, `/admin/gallery`,
+`/admin/store`, `/admin/church-details`, `/admin/payments`.
 
-A floating **24/7 Live TV** player sits bottom-right on every public page (not on `/admin`).
+A floating **24/7 Live TV** player sits bottom-right on every public page (not on `/admin`),
+with a pulsing red "on air" dot in its header.
+
+**Ahimas** is a lightweight newsletter/blog: from `/admin/ahimas` an admin types an article as
+an ordered list of blocks — paragraph, image, paragraph, image, ... — so images can be dropped
+in *between* paragraphs while writing, with up/down arrows to reorder blocks. It's rendered
+publicly at `/ahimas` (list) and `/ahimas/[id]` (article).
+
+**Prayer Requests**: `/prayer-requests` is a public form (name, email, phone, address, request).
+Submissions are private — only admins can read them, at `/admin/prayer-requests`, where each
+request can be marked `new` / `praying` / `answered`.
 
 ---
 
@@ -30,13 +42,21 @@ npm install
 npm install razorpay        # used by the /api/create-order route
 ```
 
+`npm install` now also pulls in the packages added for Cloudflare R2 + the admin-verification
+check (already listed in `package.json`, nothing extra to run):
+- `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` — talk to R2 (S3-compatible) and mint
+  short-lived presigned upload URLs
+- `firebase-admin` — verifies, server-side, that whoever is requesting an upload URL is really
+  a signed-in admin
+
 Libraries this project uses (already in `package.json`):
 - `next`, `react`, `react-dom` — framework
 - `typescript` — types
 - `tailwindcss`, `postcss`, `autoprefixer` — styling
-- `firebase` — Auth, Firestore, Storage (client SDK)
+- `firebase` — Auth + Firestore (client SDK). File storage is **Cloudflare R2**, not Firebase
+  Storage — see step 5b.
 - `react-firebase-hooks` — convenience hooks (optional, included for future use)
-- `react-player` — plays sermon/live video from any URL (Firebase Storage, YouTube, etc.)
+- `react-player` — plays sermon/live video from any URL
 - `hls.js` — plays `.m3u8` live streams in the 24/7 TV widget
 - `react-hot-toast` — toast notifications in the admin panel
 - `date-fns` — date formatting
@@ -87,6 +107,92 @@ firebase deploy --only firestore:rules,storage:rules
 This project already ships `firestore.rules` and `storage.rules` — they make all
 content **publicly readable** (so the site works without login) and **writable only
 by admins** (so random visitors can't upload).
+
+## 5b. Set up Cloudflare R2 for file storage (replaces Firebase Storage)
+
+All uploads (sermon videos, gallery photos, store images, Ahimas images, etc.) now go to
+**Cloudflare R2** instead of Firebase Storage. Firebase is still used for Auth + Firestore.
+
+**How it works:** the browser asks our own `/api/r2-upload` route for a short-lived
+"presigned" upload URL (that route first checks the caller is a signed-in admin), then
+uploads the file bytes *directly* to R2. File data never passes through our server, so
+this scales the same way Firebase Storage did.
+
+### Step 1 — Create the bucket
+1. Cloudflare Dashboard → **R2 Object Storage** → **Create bucket**.
+2. Name it (e.g. `godsark-media`). Location: Automatic is fine.
+
+### Step 2 — Make uploaded files publicly viewable
+Pick one:
+- **Quick start (free `r2.dev` domain):** Bucket → Settings → **Public access** → enable
+  the `r2.dev` dev subdomain. You'll get a URL like
+  `https://pub-xxxxxxxx.r2.dev`. Fine for testing; Cloudflare doesn't guarantee this
+  domain's availability long-term.
+- **Recommended for production (custom domain):** Bucket → Settings → **Custom domains** →
+  **Connect domain** → e.g. `media.godsarkmissions.org` (must already be on Cloudflare DNS).
+  This gives you a stable, brandable URL and free Cloudflare CDN caching.
+
+### Step 3 — Create an API token (S3 credentials)
+1. R2 → **Manage R2 API Tokens** → **Create API Token**.
+2. Permissions: **Object Read & Write**. Scope it to just this bucket if you can.
+3. Copy the **Access Key ID** and **Secret Access Key** shown — R2 shows the secret
+   only once.
+4. Also note your **Account ID**, shown on the R2 overview page (top right / URL).
+
+### Step 4 — Configure CORS on the bucket
+The browser uploads straight to R2, so the bucket needs to allow `PUT` requests from your
+site. Bucket → Settings → **CORS Policy** → add:
+```json
+[
+  {
+    "AllowedOrigins": ["http://localhost:3000", "https://your-production-domain.com"],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+Replace `your-production-domain.com` with your real domain once deployed (and add it
+back here after you have it).
+
+### Step 5 — Generate a Firebase service account key
+The upload API route needs to verify "is this caller really an admin?" server-side, which
+requires the Firebase **Admin** SDK (separate from the client SDK already configured):
+1. Firebase Console → Project settings (gear icon) → **Service accounts** →
+   **Generate new private key** → downloads a JSON file. Keep it secret — never commit it.
+2. Minify it to one line (e.g. `node -e "console.log(JSON.stringify(require('./path-to-file.json')))"`)
+   and paste that whole line as `FIREBASE_SERVICE_ACCOUNT_KEY` in `.env.local`.
+
+### Step 6 — Fill in `.env.local`
+```
+R2_ACCOUNT_ID=your-cloudflare-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
+R2_BUCKET_NAME=godsark-media
+R2_PUBLIC_URL=https://pub-xxxxxxxx.r2.dev        # or https://media.godsarkmissions.org
+R2_PUBLIC_HOSTNAME=pub-xxxxxxxx.r2.dev           # same host as above, no https://, used by next/image
+FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account", ... }   # one line, from Step 5
+```
+Add the same variables in your host's dashboard (e.g. Vercel → Project → Settings →
+Environment Variables) before deploying — `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
+`FIREBASE_SERVICE_ACCOUNT_KEY` must stay server-only (no `NEXT_PUBLIC_` prefix), which is
+already how they're wired.
+
+### Step 7 — Try it
+```bash
+npm run dev
+```
+Log into `/admin/login`, then upload something anywhere that used to use Firebase Storage
+(e.g. `/admin/gallery` or `/admin/ahimas`). You should see it appear at your R2 public URL.
+
+### Migrating existing files
+Anything already uploaded to Firebase Storage keeps working (its URL is still stored in
+Firestore and `next.config.js` still allows `firebasestorage.googleapis.com`). Only *new*
+uploads go to R2. If you want everything on R2, either re-upload old files through the
+admin panel (simplest), or write a one-off script using
+[`rclone`](https://rclone.org/) (which supports both Firebase Storage via its GCS backend
+and R2 out of the box) to copy the bucket contents across, then update the URLs stored in
+Firestore.
 
 ## 6. Create your first admin user
 

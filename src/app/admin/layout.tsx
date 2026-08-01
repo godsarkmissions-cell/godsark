@@ -16,12 +16,16 @@ import {
   Tv,
   ShoppingBag,
   Megaphone,
+  Newspaper,
+  HandHeart,
   LogOut,
 } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/announcements", label: "Announcements", icon: Megaphone },
+  { href: "/admin/ahimas", label: "Ahimas Newsletter", icon: Newspaper },
+  { href: "/admin/prayer-requests", label: "Prayer Requests", icon: HandHeart },
   { href: "/admin/sermons", label: "Sermons", icon: Video },
   { href: "/admin/live", label: "Live Broadcasts", icon: Radio },
   { href: "/admin/livetv", label: "24/7 Live TV Schedule", icon: Tv },

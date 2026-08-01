@@ -33,6 +33,19 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
+    // Ahimas newsletter/blog: publicly readable, admin-only to write.
+    match /ahimasPosts/{id}   { allow read: if true; allow write: if isAdmin(); }
+
+    // Prayer requests: anyone can submit one, but only admins can read the
+    // list, change status, or delete — these are private/pastoral care data.
+    match /prayerRequests/{id} {
+      allow create: if request.resource.data.keys().hasAll(["name", "email", "request", "status", "createdAt"]) &&
+                       request.resource.data.name is string &&
+                       request.resource.data.email is string &&
+                       request.resource.data.request is string;
+      allow read, update, delete: if isAdmin();
+    }
+
     match /scriptures/{id}    { allow read: if true; allow write: if isAdmin(); }
     match /storeItems/{id}    { allow read: if true; allow write: if isAdmin(); }
     match /gallery/{id}       { allow read: if true; allow write: if isAdmin(); }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import Sidebar from "@/components/Sidebar";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import LiveTVWidget from "@/components/LiveTVWidget";
@@ -19,11 +20,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           <IntroVideo />
           <Toaster position="top-right" />
+          <Sidebar />
           <Navbar />
           <main className="min-h-[70vh]">{children}</main>
+          <Footer />
           {/* Floating 24/7 Live TV player - bottom-right on every page except /admin */}
           <LiveTVWidget />
-          <Footer />
         </AuthProvider>
       </body>
     </html>

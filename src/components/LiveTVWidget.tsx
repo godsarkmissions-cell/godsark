@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { usePathname } from "next/navigation";
-import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { LiveTvScheduleItem } from "@/types";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useLiveTvCurrent } from "@/hooks/useLiveTvCurrent";
 import { Tv, Minus, Maximize2 } from "lucide-react";
 
 /**
@@ -13,35 +11,23 @@ import { Tv, Minus, Maximize2 } from "lucide-react";
  * /admin/livetv. This widget picks whichever item's [startTime, endTime]
  * window contains "now" and plays it. When nothing is scheduled it falls
  * back to NEXT_PUBLIC_LIVE_TV_HLS_URL (a continuous stream/loop) if set.
+ *
+ * Clicking the maximize button (or the navbar's "24/7 Live" button, which
+ * dispatches "open-live-tv") jumps to the dedicated full-screen /live-tv
+ * page instead of just growing this corner player.
  */
 export default function LiveTVWidget() {
   const pathname = usePathname();
-  const [schedule, setSchedule] = useState<LiveTvScheduleItem[]>([]);
+  const router = useRouter();
   const [minimized, setMinimized] = useState(false);
-  const [current, setCurrent] = useState<LiveTvScheduleItem | null>(null);
+  const { current, src } = useLiveTvCurrent();
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const q = query(collection(db, "liveTvSchedule"), orderBy("startTime", "asc"));
-    const unsub = onSnapshot(q, (snap) => {
-      setSchedule(snap.docs.map((d) => ({ id: d.id, ...d.data() } as LiveTvScheduleItem)));
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    const pickCurrent = () => {
-      const now = Date.now();
-      const active = schedule.find((s) => now >= s.startTime && now <= s.endTime);
-      setCurrent(active ?? null);
-    };
-    pickCurrent();
-    const interval = setInterval(pickCurrent, 15000);
-    return () => clearInterval(interval);
-  }, [schedule]);
-
-  const fallbackUrl = process.env.NEXT_PUBLIC_LIVE_TV_HLS_URL;
-  const src = current?.videoUrl || fallbackUrl;
+    const onOpenLiveTv = () => router.push("/live-tv");
+    window.addEventListener("open-live-tv", onOpenLiveTv);
+    return () => window.removeEventListener("open-live-tv", onOpenLiveTv);
+  }, [router]);
 
   // HLS (.m3u8) needs hls.js in every browser except Safari, which supports
   // it natively. mp4/webm files play fine with a plain <video> tag.
@@ -64,6 +50,7 @@ export default function LiveTVWidget() {
   }, [src]);
 
   if (pathname?.startsWith("/admin")) return null;
+  if (pathname === "/live-tv") return null; // avoid a duplicate player on the full-screen page
   if (!src) return null; // nothing scheduled and no fallback configured yet
 
   return (
@@ -73,13 +60,23 @@ export default function LiveTVWidget() {
       }`}
     >
       <div className="flex items-center justify-between bg-ink px-3 py-1.5 text-white">
-        <span className="flex items-center gap-1.5 text-xs font-semibold">
-          <Tv size={14} className="text-accent" />
-          24/7 Live TV {current ? `· ${current.title}` : ""}
+        <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
+          <Tv size={14} className="text-accent shrink-0" />
+          <span className="notify-dot h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
+          <span className="truncate">24/7 Live TV {current ? `· ${current.title}` : ""}</span>
         </span>
-        <button onClick={() => setMinimized(!minimized)} aria-label="Toggle player size">
-          {minimized ? <Maximize2 size={14} /> : <Minus size={14} />}
-        </button>
+        <span className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => router.push("/live-tv")}
+            aria-label="Open full screen"
+            title="Full screen"
+          >
+            <Maximize2 size={14} />
+          </button>
+          <button onClick={() => setMinimized(!minimized)} aria-label="Toggle player size">
+            {minimized ? <Maximize2 size={14} /> : <Minus size={14} />}
+          </button>
+        </span>
       </div>
       {!minimized && (
         <video

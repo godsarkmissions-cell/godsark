@@ -120,3 +120,37 @@ export interface AnnouncementVote {
   optionId: string;
   votedAt: number;
 }
+
+// --- Ahimas (newsletter / blog) -------------------------------------------
+// An article is written as an ordered list of blocks so the admin can
+// interleave paragraphs and images while typing, e.g. [text, image, text].
+export interface AhimasBlock {
+  id: string;
+  type: "paragraph" | "image";
+  text?: string;       // present when type === "paragraph"
+  imageUrl?: string;   // present when type === "image"
+  caption?: string;    // optional caption shown under an image block
+}
+
+export interface AhimasPost {
+  id: string;
+  title: string;
+  author: string;
+  date: number;          // epoch ms - editorial "published" date, admin-set
+  coverImageUrl?: string;
+  blocks: AhimasBlock[];
+  createdAt: number;     // epoch ms
+  updatedAt?: number;
+}
+
+// --- Prayer Requests --------------------------------------------------------
+export interface PrayerRequest {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  request: string;
+  status: "new" | "praying" | "answered";
+  createdAt: number;     // epoch ms
+}

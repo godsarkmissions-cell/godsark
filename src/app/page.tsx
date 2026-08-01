@@ -5,9 +5,14 @@ import { Play, Radio, BookOpen, ShoppingBag } from "lucide-react";
 export default function HomePage() {
   return (
     <div>
-      <section className="bg-brand-gradient py-20 text-white">
-        <div className="container-page flex flex-col items-center gap-6 text-center">
-          <Image src="/logo.png" alt="God's Ark Missions" width={110} height={110} className="rounded-full bg-white p-2" />
+      <section className="bg-brand-gradient animated-gradient relative overflow-hidden py-20 text-white">
+        <span className="gradient-blob gradient-blob-1" aria-hidden="true" />
+        <span className="gradient-blob gradient-blob-2" aria-hidden="true" />
+        <span className="gradient-blob gradient-blob-3" aria-hidden="true" />
+        <div className="container-page relative flex flex-col items-center gap-6 text-center">
+          <span className="hero-logo-glow">
+            <Image src="/logo.png" alt="God's Ark Missions" width={110} height={110} className="rounded-full bg-white p-2" />
+          </span>
           <h1 className="text-4xl font-extrabold sm:text-5xl">Welcome to God&apos;s Ark Missions</h1>
           <p className="max-w-xl text-white/90">
             A house of worship carrying the gospel to every shore — join us in person or online.

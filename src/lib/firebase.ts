@@ -1,8 +1,11 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
 
+// File storage now lives on Cloudflare R2 (see src/lib/r2.ts and
+// src/lib/upload.ts) — Firebase is only used here for Auth (admin login)
+// and Firestore (all app data). The `storageBucket` key stays harmless to
+// keep around but is no longer required.
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -17,5 +20,4 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
-export const storage = getStorage(app);
 export default app;
